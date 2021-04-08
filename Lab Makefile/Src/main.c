@@ -35,26 +35,15 @@ void SystemClock_Config(void);
 
 /* USER CODE BEGIN 0 */
 int initPins(void){
-//    RCC -> AHBENR |= RCC_AHBENR_GPIOAEN; //Enable CLK for port A
-
     //PC6 RED
     GPIOC->MODER |= 1 << 12; //set bit 12
-
     //PC7 BLUE
     GPIOC->MODER |= 1 << 14; //set bit 14
-
     //PC8 ORANGE
     GPIOC->MODER |= 1 << 16; //set bit 16
-
     //PC9 GREEN
     GPIOC->MODER |= 1 << 18; //set bit 18
 
-    //Push Button PA0
-//    GPIOA->MODER &= ~(1 << 0); //clear bits 0 and 1
-//    GPIOA->MODER &= ~(1 << 1);
-//    GPIOA->OSPEEDR &= ~(1 << 0); //clear bit 0
-//    GPIOA->PUPDR &= ~(1 << 0); //clear bit 0
-//    GPIOA->PUPDR |= 1 << 1; //set bit 1
     return 0;
 }
 
@@ -93,6 +82,18 @@ void setLED(char led, int set){
     }
 }
 
+void tx_char(char c){
+    while(((USART3->ISR) & (1<<7)) == 0);
+    USART3->TDR = c;
+}
+
+void tx_word(char c[]){
+    int i = 0;
+    while(c[i] != '\0'){
+        tx_char(c[i]);
+        i++;
+    }
+}
 
 
 /* USER CODE END 0 */
@@ -106,7 +107,24 @@ int main(void)
     RCC -> AHBENR |= RCC_AHBENR_GPIOAEN;
     RCC -> AHBENR |= RCC_AHBENR_GPIOCEN;
     RCC->APB2ENR |= RCC_APB2ENR_ADCEN;
+    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+    RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
 
+    //TX setup
+    //PB11 TX: LQPR64 30 : AF4 0100 [15, 14, 13, 12]
+    GPIOB-> MODER |= GPIO_MODER_MODER11_1; //Bit 1<<23
+    GPIOB->AFR[1] |= 1<<14;
+    //Set the Baud rate for communication to be 115200 bits/second.
+    // USART_BRR = f_CLK / baud rate = 8000000 / 115200 = 69
+    USART3->BRR = 69 ; //
+    //The USART starts with portions of the peripheral disabled for low-power use. You will need to enable the transmitter and receiver hardware.
+    USART3 -> CR1 |= USART_CR1_RXNEIE | USART_CR1_TE;
+    USART3 ->CR1 |= USART_CR1_UE;
+    
+    char *c;
+    asprintf(&c, "Example output\r\n");
+    tx_word(c);
+    
     //1. Initialize the LED pins to output.
     initPins();
     //2. Select a GPIO pin to use as the ADC input.
