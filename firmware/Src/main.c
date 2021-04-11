@@ -79,13 +79,17 @@ int main(void)
     SystemClock_Config();
 
     SetupADC();
-    SetupLEDs();
     SetupUART();
+    SetupLEDs();
 
-    UARTSendString("Hello from STM\r\n");
+    UARTSendString("Started\r\n");
 
+    char *c;
     while(1){
-        uint8_t input = ADC1->DR;
+        uint16_t input = ADC1->DR;
+        asprintf(&c, "%d\r\n", input);
+        UARTSendString(c);
+        free(c);
         
         if(input > 180){
             setLED('b', 1);
@@ -128,8 +132,8 @@ void SetupADC(void)
 	// Enable ADC1 clock
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 	
-	// 8-bit resolution (0b10)
-	ADC1->CFGR1 |= (2 << ADC_CFGR1_RES_Pos);
+	// 12-bit resolution (0b00)
+	ADC1->CFGR1 &= ~ADC_CFGR1_RES_Msk;
 	
 	// Continuous conversion mode (0b1)
 	ADC1->CFGR1 |= ADC_CFGR1_CONT;
