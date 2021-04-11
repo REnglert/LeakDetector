@@ -75,8 +75,6 @@ int main(void)
     SetupLEDs();
     SetupUART();
 
-    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
-
     UARTSendString("Hello from STM\r\n");
 
     while(1){
