@@ -2,6 +2,7 @@
   *
   * Bruce Englert 
   * u1010546
+  * 
   * Mitch Talmadge
   * u1031378
   *
@@ -13,42 +14,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f0xx_hal.h"
 void _Error_Handler(char * file, int line);
 
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
-
-/* USER CODE END PFP */
-
-/* USER CODE BEGIN 0 */
-int initPins(void){
-    //PC6 RED
-    GPIOC->MODER |= 1 << 12; //set bit 12
-    //PC7 BLUE
-    GPIOC->MODER |= 1 << 14; //set bit 14
-    //PC8 ORANGE
-    GPIOC->MODER |= 1 << 16; //set bit 16
-    //PC9 GREEN
-    GPIOC->MODER |= 1 << 18; //set bit 18
-
-    return 0;
-}
-
 
 void setLED(char led, int set){
     int l = 6;
@@ -97,18 +65,16 @@ void tx_word(char c[]){
     }
 }
 
-
-/* USER CODE END 0 */
-
 int main(void)
 {
     HAL_Init();
     SystemClock_Config();
-    RCC->APB2ENR    |= RCC_APB2ENR_SYSCFGCOMPEN;
 
-    RCC -> AHBENR |= RCC_AHBENR_GPIOAEN;
-    RCC -> AHBENR |= RCC_AHBENR_GPIOCEN;
-    RCC->APB2ENR |= RCC_APB2ENR_ADCEN;
+    SetupLEDs();
+    SetupADC();
+
+    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
+
     RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
     RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
 
@@ -126,31 +92,10 @@ int main(void)
     char *c;
     asprintf(&c, "Example output\r\n");
     tx_word(c);
-    
-    //1. Initialize the LED pins to output.
-    initPins();
-    //2. Select a GPIO pin to use as the ADC input.
-    //ADC_IN0 PA0
-    //LQFP64: 14
-    GPIOA->MODER |= GPIO_MODER_MODER0_1 | GPIO_MODER_MODER0_0;
-    //3. Enable the ADC1 in the RCC peripheral.
-    //Above
-    //4. Configure the ADC to 8-bit resolution, continuous conversion mode, hardware triggers disabled (software trigger only).
-    ADC1->CFGR1 |= ADC_CFGR1_RES_1 | ADC_CFGR1_CONT;
-    //5. Select/enable the input pin’s channel for ADC conversion.
-    ADC1->CHSELR = ADC_CHSELR_CHSEL0;
-    //6. Perform a self-calibration, enable, and start the ADC.
-    ADC1->CR |= ADC_CR_ADCAL; //elf calihbration
-    while(ADC1->CR & ADC_CR_ADCAL) {}
-    ADC1->CR |= ADC_CR_ADEN; //enable
-    while(ADC1->ISR & ADC_ISR_ADRDY) {}
-    ADC1->CR |= ADC_CR_ADSTART; //start
-    //7. In the main application loop, read the ADC data register and turn on/off LEDs depending on the value.
-    
+       
 
-    uint8_t index = 0;
     while(1){
-        input = ADC1->DR;
+        uint8_t input = ADC1->DR;
         
         if(input > 180){
             setLED('b', 1);
@@ -167,6 +112,94 @@ int main(void)
         
         HAL_Delay(1);
     }
+}
+
+void SetupLEDs(void)
+{
+	// Enable the GPIOC clock in the RCC
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
+	
+	// General Purpose Output (0b01)
+	GPIOC->MODER &= ~GPIO_MODER_MODER6_1; // PC6 - Red LED
+	GPIOC->MODER |= GPIO_MODER_MODER6_0;
+	
+	GPIOC->MODER &= ~GPIO_MODER_MODER7_1; // PC7 - Blue LED
+	GPIOC->MODER |= GPIO_MODER_MODER7_0;
+	
+	GPIOC->MODER &= ~GPIO_MODER_MODER8_1; // PC8 - Orange LED
+	GPIOC->MODER |= GPIO_MODER_MODER8_0;
+	
+	GPIOC->MODER &= ~GPIO_MODER_MODER9_1; // PC9 - Green LED
+	GPIOC->MODER |= GPIO_MODER_MODER9_0;
+	
+	// Output Type Push-Pull (0b0)
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_6; // PC6
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_7; // PC7
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_8; // PC8
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_9; // PC9
+	
+	// Low Speed (0b00)
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR6_Msk; // PC6
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR7_Msk; // PC7
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR8_Msk; // PC8
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR9_Msk; // PC9
+	
+	// Disable Pull Up/Down (0b00)
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR6_Msk; // PC6
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR7_Msk; // PC7
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR8_Msk; // PC8
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR9_Msk; // PC9	
+}
+
+void SetupADC(void)
+{
+  /* Setup Input Pin PA0 
+  ------------------------------------- */
+	// Enable the GPIOA clock in the RCC
+	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+	
+	// Analog Mode (0b11)
+	GPIOA->MODER |= GPIO_MODER_MODER0_Msk;
+	
+	// Output Type Open-Drain (0b1)
+	GPIOA->OTYPER |= GPIO_OTYPER_OT_0;
+	
+	// Low Speed (0b00)
+	GPIOA->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR0_Msk;
+	
+	// Disable Pull Up / Down (0b00)
+	GPIOA->PUPDR &= ~GPIO_PUPDR_PUPDR0_Msk;
+	
+  /* Setup ADC1
+  ------------------------------------- */
+	// Enable ADC1 clock
+	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+	
+	// 8-bit resolution (0b10)
+	ADC1->CFGR1 |= (2 << ADC_CFGR1_RES_Pos);
+	
+	// Continuous conversion mode (0b1)
+	ADC1->CFGR1 |= ADC_CFGR1_CONT;
+	
+	// Disabled hardware trigger detection (0b00)
+	ADC1->CFGR1 &= ~ADC_CFGR1_EXTEN;
+	
+	// Select channel 0 for PA0
+	ADC1->CHSELR |= ADC_CHSELR_CHSEL0;
+	
+	// Self-calibrate 
+	ADC1->CR |= ADC_CR_ADCAL;
+	// Wait for calibration to complete
+	while(ADC1->CR & ADC_CR_ADCAL);
+	
+	// Enable
+	ADC1->ISR |= ADC_ISR_ADRDY;
+	ADC1->CR |= ADC_CR_ADEN;
+	// Wait for ready
+	while(!(ADC1->ISR & ADC_ISR_ADRDY));
+	
+	// Start
+	ADC1->CR |= ADC_CR_ADSTART;
 }
 
 /** System Clock Configuration

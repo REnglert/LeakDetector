@@ -1,2 +1,6 @@
+# IDE files
+.vscode
+
+# Build files
 firmware/build
 firmware/*.bin
