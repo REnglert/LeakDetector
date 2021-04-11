@@ -8,17 +8,36 @@ extern "C" {
 #include "stm32f0xx_hal.h"
 
 /**
+ * Sets up the analog-to-digital converter to be used for vibration sensing.
+ */
+void SetupADC(void);
+
+/**
  * Sets up the onboard Discovery LEDs as push/pull.
  */
 void SetupLEDs(void);
 
 /**
- * Sets up the analog-to-digital converter to be used for vibration sensing.
+ * Sets up UART for serial communication.
  */
-void SetupADC(void);
+void SetupUART(void);
+
+/**
+ * Reads a single character from the UART channel.
+ */
+char UARTRead(void);
+
+/**
+ * Sends a full string across the UART channel.
+ */
+void UARTSendString(char* str);
+
+/**
+ * Sends a single character across the UART channel.
+ */
+void UARTSend(char c);
 
 void Error_Handler(void);
-
 
 #ifdef __cplusplus
 }

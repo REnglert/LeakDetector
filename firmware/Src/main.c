@@ -52,47 +52,32 @@ void setLED(char led, int set){
     }
 }
 
-void tx_char(char c){
-    while(((USART3->ISR) & (1<<7)) == 0);
-    USART3->TDR = c;
-}
-
-void tx_word(char c[]){
-    int i = 0;
-    while(c[i] != '\0'){
-        tx_char(c[i]);
-        i++;
-    }
-}
-
 int main(void)
 {
+  /* 
+    Pinout:
+    --------------------
+    PA0 - ADC In (Vibration Sensor)
+    
+    PB10 - UART TX
+	  PB11 - UART RX
+
+    PC6 - Red LED Onboard
+    PC7 - Blue LED Onboard
+    PC8 - Orange LED Onboard
+    PC9 - Green LED Onboard
+   */
+
     HAL_Init();
     SystemClock_Config();
 
-    SetupLEDs();
     SetupADC();
+    SetupLEDs();
+    SetupUART();
 
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
 
-    RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-    RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
-
-    //TX setup
-    //PB11 TX: LQPR64 30 : AF4 0100 [15, 14, 13, 12]
-    GPIOB-> MODER |= GPIO_MODER_MODER11_1; //Bit 1<<23
-    GPIOB->AFR[1] |= 1<<14;
-    //Set the Baud rate for communication to be 115200 bits/second.
-    // USART_BRR = f_CLK / baud rate = 8000000 / 115200 = 69
-    USART3->BRR = 69 ; //
-    //The USART starts with portions of the peripheral disabled for low-power use. You will need to enable the transmitter and receiver hardware.
-    USART3 -> CR1 |= USART_CR1_RXNEIE | USART_CR1_TE;
-    USART3 ->CR1 |= USART_CR1_UE;
-    
-    char *c;
-    asprintf(&c, "Example output\r\n");
-    tx_word(c);
-       
+    UARTSendString("Hello from STM\r\n");
 
     while(1){
         uint8_t input = ADC1->DR;
@@ -112,43 +97,6 @@ int main(void)
         
         HAL_Delay(1);
     }
-}
-
-void SetupLEDs(void)
-{
-	// Enable the GPIOC clock in the RCC
-	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
-	
-	// General Purpose Output (0b01)
-	GPIOC->MODER &= ~GPIO_MODER_MODER6_1; // PC6 - Red LED
-	GPIOC->MODER |= GPIO_MODER_MODER6_0;
-	
-	GPIOC->MODER &= ~GPIO_MODER_MODER7_1; // PC7 - Blue LED
-	GPIOC->MODER |= GPIO_MODER_MODER7_0;
-	
-	GPIOC->MODER &= ~GPIO_MODER_MODER8_1; // PC8 - Orange LED
-	GPIOC->MODER |= GPIO_MODER_MODER8_0;
-	
-	GPIOC->MODER &= ~GPIO_MODER_MODER9_1; // PC9 - Green LED
-	GPIOC->MODER |= GPIO_MODER_MODER9_0;
-	
-	// Output Type Push-Pull (0b0)
-	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_6; // PC6
-	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_7; // PC7
-	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_8; // PC8
-	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_9; // PC9
-	
-	// Low Speed (0b00)
-	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR6_Msk; // PC6
-	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR7_Msk; // PC7
-	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR8_Msk; // PC8
-	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR9_Msk; // PC9
-	
-	// Disable Pull Up/Down (0b00)
-	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR6_Msk; // PC6
-	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR7_Msk; // PC7
-	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR8_Msk; // PC8
-	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR9_Msk; // PC9	
 }
 
 void SetupADC(void)
@@ -200,6 +148,93 @@ void SetupADC(void)
 	
 	// Start
 	ADC1->CR |= ADC_CR_ADSTART;
+}
+
+void SetupLEDs(void)
+{
+	// Enable the GPIOC clock in the RCC
+	RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
+	
+	// General Purpose Output (0b01)
+	GPIOC->MODER &= ~GPIO_MODER_MODER6_1; // PC6 - Red LED
+	GPIOC->MODER |= GPIO_MODER_MODER6_0;
+	
+	GPIOC->MODER &= ~GPIO_MODER_MODER7_1; // PC7 - Blue LED
+	GPIOC->MODER |= GPIO_MODER_MODER7_0;
+	
+	GPIOC->MODER &= ~GPIO_MODER_MODER8_1; // PC8 - Orange LED
+	GPIOC->MODER |= GPIO_MODER_MODER8_0;
+	
+	GPIOC->MODER &= ~GPIO_MODER_MODER9_1; // PC9 - Green LED
+	GPIOC->MODER |= GPIO_MODER_MODER9_0;
+	
+	// Output Type Push-Pull (0b0)
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_6; // PC6
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_7; // PC7
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_8; // PC8
+	GPIOC->OTYPER &= ~GPIO_OTYPER_OT_9; // PC9
+	
+	// Low Speed (0b00)
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR6_Msk; // PC6
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR7_Msk; // PC7
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR8_Msk; // PC8
+	GPIOC->OSPEEDR &= ~GPIO_OSPEEDR_OSPEEDR9_Msk; // PC9
+	
+	// Disable Pull Up/Down (0b00)
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR6_Msk; // PC6
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR7_Msk; // PC7
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR8_Msk; // PC8
+	GPIOC->PUPDR &= ~GPIO_PUPDR_PUPDR9_Msk; // PC9	
+}
+
+void SetupUART(void) {
+	// Enable GPIOB Clock
+	RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
+	
+	// TX: PB10
+	// RX: PB11
+	
+	// Alternate Function Output (0b10)
+	GPIOB->MODER &= ~GPIO_MODER_MODER10_0;
+	GPIOB->MODER |= GPIO_MODER_MODER10_1;
+	GPIOB->MODER &= ~GPIO_MODER_MODER11_0;
+	GPIOB->MODER |= GPIO_MODER_MODER11_1;
+	
+	// Use USART3 (AF4)
+	GPIOB->AFR[1] |= (4 << GPIO_AFRH_AFSEL10_Pos);
+	GPIOB->AFR[1] |= (4 << GPIO_AFRH_AFSEL11_Pos);
+	
+	// Enable USART3 Clock
+	RCC->APB1ENR |= RCC_APB1ENR_USART3EN;
+	
+	// Set USART3 baud rate to 115200 bps
+	// USART_BRR = fCLK/Baud
+	USART3->BRR = HAL_RCC_GetHCLKFreq() / 115200;
+
+	// Enable transmitter and receiver
+	USART3->CR1 |= USART_CR1_TE | USART_CR1_RE;
+	
+	// Final enable of USART3
+	USART3->CR1 |= USART_CR1_UE;
+}
+
+char UARTRead(void) {
+	while(!(USART3->ISR & USART_ISR_RXNE));
+	return USART3->RDR;
+}
+
+void UARTSendString(char* str) {
+	uint8_t i = 0;
+	char c;
+	while((c = str[i]) != 0) {
+		UARTSend(c);
+		i++;
+	}
+}
+
+void UARTSend(char c) {
+	while(!(USART3->ISR & USART_ISR_TXE));
+	USART3->TDR = c;
 }
 
 /** System Clock Configuration
