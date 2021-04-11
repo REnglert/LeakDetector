@@ -66,6 +66,13 @@ int main(void)
     PC7 - Blue LED Onboard
     PC8 - Orange LED Onboard
     PC9 - Green LED Onboard
+
+    Manuals:
+    --------------------
+    - Peripherals: https://www.st.com/content/ccc/resource/technical/document/reference_manual/c2/f8/8a/f2/18/e6/43/96/DM00031936.pdf/files/DM00031936.pdf/jcr:content/translations/en.DM00031936.pdf
+    - STM32F072xB Datasheet: https://www.st.com/resource/en/datasheet/DM00090510.pdf
+    - Discovery Datasheet: https://www.st.com/content/ccc/resource/technical/document/user_manual/3b/8d/46/57/b7/a9/49/b4/DM00099401.pdf/files/DM00099401.pdf/jcr:content/translations/en.DM00099401.pdf
+    - STM Programming Manual: https://www.st.com/content/ccc/resource/technical/document/programming_manual/fc/90/c7/17/a1/44/43/89/DM00051352.pdf/files/DM00051352.pdf/jcr:content/translations/en.DM00051352.pdf
    */
 
     HAL_Init();
