@@ -94,7 +94,7 @@ int main(void)
   uint16_t sink = 0;
   uint16_t toilet = 0;
   uint16_t tub = 0;
-  uint16_t counter = 0;
+
   uint16_t adjusted = 0 ;
   char *c;
   while(1){
@@ -111,7 +111,6 @@ int main(void)
     asprintf(&c, "%d\r\n", adjusted);
     UARTSendString(c);
     free(c);
-
     
     //Cases:
     //1: Quiet pipe
