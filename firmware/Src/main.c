@@ -52,6 +52,13 @@ void setLED(char led, int set){
     }
 }
 
+void rgboSet (int r, int g, int b, int o){
+  setLED('o', o); 
+  setLED('r', r); 
+  setLED('b', b); 
+  setLED('g', g); 
+}
+
 int main(void)
 {
   /* 
@@ -75,37 +82,61 @@ int main(void)
     - STM Programming Manual: https://www.st.com/content/ccc/resource/technical/document/programming_manual/fc/90/c7/17/a1/44/43/89/DM00051352.pdf/files/DM00051352.pdf/jcr:content/translations/en.DM00051352.pdf
    */
 
-    HAL_Init();
-    SystemClock_Config();
+  HAL_Init();
+  SystemClock_Config();
 
-    SetupADC();
-    SetupUART();
-    SetupLEDs();
+  SetupADC();
+  SetupUART();
+  SetupLEDs();
 
-    UARTSendString("Started\r\n");
+  UARTSendString("Started\r\n");
 
-    char *c;
-    while(1){
-        uint16_t input = ADC1->DR;
-        asprintf(&c, "%d\r\n", input);
-        UARTSendString(c);
-        free(c);
-        
-        if(input > 180){
-            setLED('b', 1);
-        }
-        else if(input > 120){
-            setLED('g', 1);
-        }
-        else if(input > 60){
-            setLED('o', 1);
-        }
-        else if(input <= 60 && input > 40){
-            setLED('r', 1);
-        }
-        
-        HAL_Delay(1);
+  uint16_t sink = 0;
+  uint16_t toilet = 0;
+  uint16_t tub = 0;
+  uint16_t counter = 0;
+  uint16_t adjusted = 0 ;
+  char *c;
+  while(1){
+    uint16_t input = ADC1->DR;
+    // asprintf(&c, "%d\r\n", input);
+    // UARTSendString(c);
+    // free(c);
+    if(input > 2050){
+      adjusted = input - 2050; 
     }
+    else {
+      continue; 
+    }
+    asprintf(&c, "%d\r\n", adjusted);
+    UARTSendString(c);
+    free(c);
+
+    
+    //Cases:
+    //1: Quiet pipe
+    if(adjusted < 20){
+      rgboSet(0, 0, 0, 0);       
+    }
+    //Sink 
+    else if(adjusted >= 20 && adjusted < 45){
+      rgboSet(0, 1, 0, 0); 
+    }
+    //Toilet 
+    else if(adjusted >= 45 && adjusted < 90){
+      rgboSet(0, 0, 0, 1); 
+    }
+    //Tub
+    else if(adjusted >= 90 && adjusted < 200){
+      rgboSet(1, 0, 0, 0);
+    }
+    //Potential Multiple appliances running 
+    else {
+      rgboSet(0, 0, 1, 0); 
+    }
+
+    HAL_Delay(1); 
+  }
 }
 
 void SetupADC(void)
@@ -133,8 +164,10 @@ void SetupADC(void)
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 	
 	// 12-bit resolution (0b00)
-	ADC1->CFGR1 &= ~ADC_CFGR1_RES_Msk;
-	
+    ADC1->CFGR1 &= ~ADC_CFGR1_RES_Msk;
+    // 8-bit resolution (0b10
+//    ADC1->CFGR1 |= ADC_CFGR1_RES_1;
+    
 	// Continuous conversion mode (0b1)
 	ADC1->CFGR1 |= ADC_CFGR1_CONT;
 	
