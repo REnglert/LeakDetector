@@ -91,10 +91,9 @@ int main(void)
 
   UARTSendString("Started\r\n");
 
-  uint16_t sink = 0;
-  uint16_t toilet = 0;
-  uint16_t tub = 0;
-
+  uint16_t sink = 0, toilet = 0, tub = 0, high = 0;
+  uint16_t count = 0; 
+  uint8_t state = 0; //0 = quiet, 1 = sink, 2 = toilet, 3 = tub, 4 = high/multiple 
   uint16_t adjusted = 0 ;
   char *c;
   while(1){
@@ -111,27 +110,64 @@ int main(void)
     asprintf(&c, "%d\r\n", adjusted);
     UARTSendString(c);
     free(c);
-    
-    //Cases:
-    //1: Quiet pipe
-    if(adjusted < 20){
-      rgboSet(0, 0, 0, 0);       
+    count ++; 
+
+    if(count >= 900){
+      //Check in descending order 
+      //High usage multiple appliances  
+      if(high >= 15){ 
+        state = 4; 
+
+        rgboSet(0, 0, 1, 0); 
+      }
+      //Tub being used 
+      else if(tub >= 15){
+        state = 3; 
+
+        rgboSet(1, 0, 0, 0);
+      }
+      //toilet being used 
+      else if(toilet >= 15){
+        state = 2; 
+
+        rgboSet(0, 0, 0, 1);
+      }
+      //sink being used 
+      else if(sink >= 15){
+        state = 1; 
+
+        rgboSet(0, 1, 0, 0); 
+      }
+      //quiet
+      else { 
+        state = 0; 
+
+        rgboSet(0, 0, 0, 0);
+
+      }
+      sink = 0; 
+      toilet = 0; 
+      tub = 0; 
+      high = 0; 
+      count = 0; 
+    }
+
+
+    //Potential Multiple appliances running 
+    if(adjusted >= 200){
+      high ++; 
     }
     //Sink 
     else if(adjusted >= 20 && adjusted < 45){
-      rgboSet(0, 1, 0, 0); 
+      sink ++; 
     }
     //Toilet 
     else if(adjusted >= 45 && adjusted < 90){
-      rgboSet(0, 0, 0, 1); 
+      toilet++; 
     }
     //Tub
     else if(adjusted >= 90 && adjusted < 200){
-      rgboSet(1, 0, 0, 0);
-    }
-    //Potential Multiple appliances running 
-    else {
-      rgboSet(0, 0, 1, 0); 
+      tub++; 
     }
 
     HAL_Delay(1); 
