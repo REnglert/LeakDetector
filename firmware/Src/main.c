@@ -91,10 +91,12 @@ int main(void)
 
   UARTSendString("Started\r\n");
 
-  uint16_t sink = 0, toilet = 0, tub = 0, high = 0;
-  uint16_t count = 0; 
-  uint8_t state = 0; //0 = quiet, 1 = sink, 2 = toilet, 3 = tub, 4 = high/multiple 
-  uint16_t adjusted = 0 ;
+  uint16_t  sink = 0, toilet = 0, tub = 0, high = 0;
+  uint16_t  count = 0; 
+  uint8_t   state = 0; //0 = quiet, 1 = sink, 2 = toilet, 3 = tub, 4 = high/multiple 
+  uint16_t  adjusted = 0;
+  uint16_t  timeout = 0; 
+
   char *c;
   while(1){
     uint16_t input = ADC1->DR;
@@ -111,6 +113,7 @@ int main(void)
     UARTSendString(c);
     free(c);
     count ++; 
+    timeout ++; 
 
     if(count >= 900){
       //Check in descending order 
@@ -143,13 +146,18 @@ int main(void)
         state = 0; 
 
         rgboSet(0, 0, 0, 0);
-
+        timeout = 0; 
       }
       sink = 0; 
       toilet = 0; 
       tub = 0; 
       high = 0; 
       count = 0; 
+    }
+
+    if(timeout >= 10000){
+      rgboSet(1, 1, 1, 1);  
+      timeout = 10001; 
     }
 
 
