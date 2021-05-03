@@ -155,9 +155,9 @@ int main(void)
       count = 0; 
     }
 
-    if(timeout >= 10000){
+    if(timeout >= 20000){
       rgboSet(1, 1, 1, 1);  
-      timeout = 10001; 
+      timeout = 20001; 
     }
 
 
