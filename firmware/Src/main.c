@@ -19,6 +19,14 @@ void _Error_Handler(char * file, int line);
 void SystemClock_Config(void);
 
 void setLED(char led, int set){
+  /*
+  Options for led are: 'r' 'g', 'b', 'o' 
+    For the 4 leds available. 
+  Settings: 
+    0 - LED off 
+    1 - LED on 
+    2 - LED toggle 
+  */
     int l = 6;
     switch (led){
         case 'r':
@@ -53,6 +61,14 @@ void setLED(char led, int set){
 }
 
 void rgboSet (int r, int g, int b, int o){
+  /*
+  For each led set to option 0, 1, or 2. 
+
+  Options: 
+    0 - LED off 
+    1 - LED on 
+    2 - LED toggle 
+  */
   setLED('o', o); 
   setLED('r', r); 
   setLED('b', b); 
@@ -80,6 +96,12 @@ int main(void)
     - STM32F072xB Datasheet: https://www.st.com/resource/en/datasheet/DM00090510.pdf
     - Discovery Datasheet: https://www.st.com/content/ccc/resource/technical/document/user_manual/3b/8d/46/57/b7/a9/49/b4/DM00099401.pdf/files/DM00099401.pdf/jcr:content/translations/en.DM00099401.pdf
     - STM Programming Manual: https://www.st.com/content/ccc/resource/technical/document/programming_manual/fc/90/c7/17/a1/44/43/89/DM00051352.pdf/files/DM00051352.pdf/jcr:content/translations/en.DM00051352.pdf
+
+    Setup Instructions: 
+    --------------------
+    ALARM - int duration in ms for how long the pipe detects water before 
+      deciding the current behavior is a leak. 
+
    */
 
   HAL_Init();
@@ -91,6 +113,8 @@ int main(void)
 
   UARTSendString("Started\r\n");
 
+  uint16_t ALARM = 20000; //2 minutes, Max is 60000 1 hour 
+
   uint16_t  sink = 0, toilet = 0, tub = 0, high = 0;
   uint16_t  count = 0; 
   uint8_t   state = 0; //0 = quiet, 1 = sink, 2 = toilet, 3 = tub, 4 = high/multiple 
@@ -100,9 +124,6 @@ int main(void)
   char *c;
   while(1){
     uint16_t input = ADC1->DR;
-    // asprintf(&c, "%d\r\n", input);
-    // UARTSendString(c);
-    // free(c);
     if(input > 2050){
       adjusted = input - 2050; 
     }
@@ -155,12 +176,12 @@ int main(void)
       count = 0; 
     }
 
-    if(timeout >= 20000){
+    if(timeout >= ALARM){
       rgboSet(1, 1, 1, 1);  
-      timeout = 20001; 
+      timeout = ALARM+1; 
     }
 
-
+    //Set threshold values as desired 
     //Potential Multiple appliances running 
     if(adjusted >= 200){
       high ++; 
