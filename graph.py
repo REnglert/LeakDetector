@@ -14,7 +14,7 @@ for i in content_list:
     a.append(int(i))
 
 #Most common number 
-print(max(set(a), key = a.count))
+# print(max(set(a), key = a.count))
 
 #Define thresholds to plot 
 b = [] 
@@ -31,7 +31,7 @@ front = 0
 back  = -1
 
 #Max val in range to help with determining thresholds 
-print(max(a[front:back]))
+# print(max(a[front:back]))
 
 plt.plot(a[front:back], linestyle='dotted')
 
